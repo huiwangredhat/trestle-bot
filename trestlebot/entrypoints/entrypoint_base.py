@@ -18,6 +18,10 @@ import os
 import sys
 from typing import List, Optional, Tuple
 
+from ssg.products import (
+    load_product_yaml,
+    product_yaml_path
+)
 from trestlebot import const
 from trestlebot.bot import TrestleBot
 from trestlebot.github import GitHubActionsResultsReporter, is_github_actions
@@ -290,3 +294,29 @@ def handle_exception(
         return const.INVALID_ARGS_EXIT_CODE
 
     return const.ERROR_EXIT_CODE
+
+def get_component_title(component_title = None, product_name = None, cac_path = None) -> str:
+    """Get the product name from product yml file via the SSG library."""
+    if component_title:
+        if product_name or cac_path:
+            raise ValueError(
+            "The --component-title is provided, no need --product-name and --cac-path."
+        )
+        else:
+            return component_title
+    else:
+        if product_name and cac_path:
+            try:
+                # Get the product yaml file path
+                product_yml_path = product_yaml_path(cac_path, product_name)
+                # Load the product data
+                product = load_product_yaml(product_yml_path)
+                # Return product name from product yml file
+                return product._primary_data.get("product")
+            except Exception as e:
+                logger.error(f"Error retrieving product title: {e}", exc_info=True)  
+        else:
+            raise ValueError(
+                "If --component-title is not provided, " +
+                "both --product-name and --cac-path must be provided."
+            )

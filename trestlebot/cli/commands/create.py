@@ -10,11 +10,15 @@ from typing import Any, List
 
 import click
 
+
 from trestlebot import const
-from trestlebot.cli.options.common import common_options, handle_exceptions
+from trestlebot.cli.options.common import common_options, git_options, handle_exceptions
 from trestlebot.cli.options.create import common_create_options
 from trestlebot.cli.utils import run_bot
-from trestlebot.entrypoints.entrypoint_base import comma_sep_to_list
+from trestlebot.entrypoints.entrypoint_base import (
+    comma_sep_to_list,
+    get_component_title
+)
 from trestlebot.tasks.assemble_task import AssembleTask
 from trestlebot.tasks.authored.compdef import (
     AuthoredComponentDefinition,
@@ -44,6 +48,7 @@ def create_cmd(ctx: click.Context) -> None:
 @click.pass_context
 @common_create_options
 @common_options
+@git_options
 @click.option(
     "--compdef-name",
     required=True,
@@ -52,10 +57,25 @@ def create_cmd(ctx: click.Context) -> None:
 )
 @click.option(
     "--component-title",
-    required=True,
-    prompt="Enter name of component title",
+    required=False,
+    type=str,
     help="Title of initial component.",
 )
+
+@click.option(
+    "--product-name",
+    required=False,
+    type=str,
+    help="Name of the ComplainceAsCode content product.",
+)
+
+@click.option(
+    "--cac-path",
+    required=False,
+    type=str,
+    help="Path of the ComplainceAsCode content path",
+)
+
 @click.option(
     "--component-description",
     required=True,
@@ -84,10 +104,11 @@ def compdef_cmd(
     Component definition authoring command.
     """
     pre_tasks: List[TaskBase] = []
-
     profile_name = kwargs["profile_name"]
     compdef_name = kwargs["compdef_name"]
     component_title = kwargs["component_title"]
+    product_name = kwargs["product_name"]
+    cac_path = kwargs["cac_path"]
     component_description = kwargs["component_description"]
     filter_by_profile = kwargs.get("filter_by_profile")
     component_definition_type = kwargs.get("component_definition_type", "service")
@@ -99,6 +120,9 @@ def compdef_cmd(
     authored_comp: AuthoredComponentDefinition = AuthoredComponentDefinition(
         trestle_root=repo_path,
     )
+
+    component_title = get_component_title(component_title,
+                                         product_name, cac_path)
     authored_comp.create_new_default(
         profile_name=profile_name,
         compdef_name=compdef_name,
@@ -147,6 +171,7 @@ def compdef_cmd(
 @click.pass_context
 @common_create_options
 @common_options
+@git_options
 @click.option(
     "--ssp-name",
     required=True,
