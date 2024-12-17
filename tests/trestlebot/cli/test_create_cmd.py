@@ -7,6 +7,25 @@ from click.testing import CliRunner
 
 from trestlebot.cli.commands.create import create_cmd
 
+options = [
+            "compdef",
+            "--profile-name",
+            "oscal-profile-name",
+            "--compdef-name",
+            "test-name",
+            "--component-description",
+            "description-test",
+            "--component-definition-type",
+            "type-test",
+            "--markdown-dir",
+            "markdown",
+            '--committer-email',
+            'commit-email',
+            '--committer-name',
+            'commit-name',
+            '--branch',
+            'main'
+        ]
 
 def test_invalid_create_cmd() -> None:
     """Tests that create command fails if given invalid oscal model subcommand."""
@@ -50,23 +69,15 @@ def test_create_compdef_cmd(tmp_init_dir: str) -> None:
     runner = CliRunner()
     result = runner.invoke(
         create_cmd,
+        options +
         [
-            "compdef",
-            "--profile-name",
-            "oscal-profile-name",
-            "--compdef-name",
-            "test-name",
             "--component-title",
             "title-test",
-            "--component-description",
-            "description-test",
-            "--component-definition-type",
-            "type-test",
-            "repo-path",
+            "--repo-path",
             tmp_init_dir,
         ],
     )
-    assert result.exit_code == 2
+    assert result.exit_code == 0
 
 
 def test_default_ssp_index_file_cmd(tmp_init_dir: str) -> None:
@@ -147,3 +158,57 @@ def test_markdown_files_created(tmp_init_dir: str) -> None:
         ],
     )
     assert result.exit_code == 0
+
+
+def test_create_cd_with_cac_product(tmp_init_dir: str) -> None:
+    """Tests component title is populated from CaC product name"""
+
+    runner = CliRunner()
+    result = runner.invoke(
+        create_cmd,
+        options +
+        [
+            "--product-name",
+            "product-name",
+            "--cac-path",
+            "cac-path",
+            "--repo-path",
+            tmp_init_dir,
+        ],
+    )
+    assert result.exit_code == 0
+
+
+def test_create_cd_with_cac_product_invalid_input(tmp_init_dir: str) -> None:
+    """Invalid tests for component title is populated from CaC product name"""
+
+    runner = CliRunner()
+    # The --component-title is provided, no need --product-name and --cac-path
+    result = runner.invoke(
+        create_cmd,
+        options +
+        [
+            "--component-title",
+            "component-title",
+            "--product-name",
+            "product-name",
+            "--cac-path",
+            "cac-path",
+            "--repo-path",
+            tmp_init_dir,
+        ],
+    )
+    assert result.exit_code == 2
+    # If --component-title is not provided, both --product-name and --cac-path
+    # must be provided.
+    result = runner.invoke(
+        create_cmd,
+        options +
+        [
+            "--product-name",
+            "product-name",
+            "--repo-path",
+            tmp_init_dir,
+        ],
+    )
+    assert result.exit_code == 2
